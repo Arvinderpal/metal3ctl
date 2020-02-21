@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"github.com/Arvinderpal/cmd"
+	"github.com/Arvinderpal/metal3ctl/cmd"
 )
 
 func main() {

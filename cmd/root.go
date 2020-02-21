@@ -34,8 +34,10 @@ var RootCmd = &cobra.Command{
 	SilenceUsage: true,
 	Short:        "metal3ctl controls a management cluster for metal-3",
 	Long: LongDesc(`
-		Get started with metal-3 using metal3ctl for initializing a management cluster by installing
-		Cluster API providers, baremetal-operator and associated packages, and then use metal3ctl for creating yaml templates for your baremetal hosts and workload clusters.`),
+		Get started with metal-3 using metal3ctl for initializing a management cluster by 
+		installing Cluster API providers, baremetal-operator and associated packages, and 
+		then use metal3ctl for creating yaml templates for your baremetal hosts and 
+		workload clusters.`),
 }
 
 func Execute() {
