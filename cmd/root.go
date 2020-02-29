@@ -26,7 +26,6 @@ import (
 	logf "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/log"
 )
 
-var clusterctlCfgFile string
 var metal3ctlCfgFile string
 
 var RootCmd = &cobra.Command{
@@ -55,8 +54,7 @@ func init() {
 	logf.SetLogger(logf.NewLogger(logf.WithThreshold(verbosity)))
 
 	RootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-	RootCmd.PersistentFlags().StringVar(&clusterctlCfgFile, "clusterctl-config", "", "Path to the the clusterctl config file (default is $HOME/.cluster-api/clusterctl.yaml)")
-	RootCmd.PersistentFlags().StringVar(&metal3ctlCfgFile, "metal3ctl-config", "", "Path to the the metal3ctl config file (default is $HOME/.metal3/metal3ctl.yaml)")
+	RootCmd.PersistentFlags().StringVar(&metal3ctlCfgFile, "config", "", "Path to the the metal3ctl config file (default is $HOME/.metal3/metal3ctl.yaml)")
 }
 
 const Indentation = `  `
