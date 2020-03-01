@@ -61,7 +61,7 @@ type Metal3CtlConfig struct {
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// Path to where all the generated artifacts will be stored.
-	ArtifactPath string `json:"artifactPath,omitempty"`
+	ArtifactsPath string `json:"artifactsPath,omitempty"`
 
 	// Images is a list of container images to load into the mgmt cluster.
 	Images []ContainerImage `json:"images,omitempty"`
@@ -117,8 +117,8 @@ func (c *Metal3CtlConfig) Validate() error {
 	if c.Kubeconfig == "" {
 		return errEmptyArg("kubeconfig")
 	}
-	if c.ArtifactPath == "" {
-		return errEmptyArg("artifactPath")
+	if c.ArtifactsPath == "" {
+		return errEmptyArg("artifactsPath")
 	}
 	providersByType := map[clusterctlv1.ProviderType][]string{
 		clusterctlv1.CoreProviderType:           nil,

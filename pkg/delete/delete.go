@@ -14,58 +14,49 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package init
+package delete
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/Arvinderpal/metal3ctl/config"
+	"github.com/Arvinderpal/metal3ctl/pkg/util"
 	"github.com/pkg/errors"
 	clusterctlclient "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/client"
 	clusterctlconfig "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/client/config"
 )
 
-type InitOptions struct {
-	ListImages bool
+type DeleteOptions struct {
+	IncludeNamespace bool
+	IncludeCRDs      bool
 }
 
-func InitMgmtCluster(input config.LoadMetal3CtlConfigInput) error {
+func DeleteFromMgmtCluster(input config.LoadMetal3CtlConfigInput, dd *DeleteOptions) error {
 	ctx := context.TODO()
 	config, err := config.LoadMetal3CtlConfig(ctx, input)
 	if err != nil {
-		return errors.Wrapf(err, " error loading metal3ctl config file")
-	}
-	// prettyJSON, err := json.MarshalIndent(config, "", "    ")
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Printf("%s\n", string(prettyJSON))
-
-	// Creates a local provider repository based on the configuration and a clusterctl config file that reads from this repository.
-	clusterctlConfig, err := CreateRepository(ctx, CreateRepositoryInput{
-		config:        config,
-		artifactsPath: config.ArtifactsPath,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "error creating local repository")
+		return errors.Wrapf(err, "error loading metal3ctl config file")
 	}
 
-	cctlClient, err := clusterctlclient.New(clusterctlConfig.Path)
+	clusterctlConfigPath := filepath.Join(util.GetRepositoryPath(config.ArtifactsPath), util.CLUSTERCTL_CONFIG_FILENAME)
+
+	cctlClient, err := clusterctlclient.New(clusterctlConfigPath)
 	if err != nil {
 		return errors.Wrapf(err, "error creating clusterctl client")
 	}
 
-	initOpt := clusterctlclient.InitOptions{
+	if err := cctlClient.Delete(clusterctlclient.DeleteOptions{
 		Kubeconfig:              config.Kubeconfig,
+		IncludeNamespace:        dd.IncludeNamespace,
+		IncludeCRDs:             dd.IncludeCRDs,
 		CoreProvider:            clusterctlconfig.ClusterAPIProviderName,
 		BootstrapProviders:      []string{clusterctlconfig.KubeadmBootstrapProviderName},
 		ControlPlaneProviders:   []string{clusterctlconfig.KubeadmControlPlaneProviderName},
 		InfrastructureProviders: []string{config.InfraProvider()},
-	}
-
-	_, err = cctlClient.Init(initOpt)
-	if err != nil {
-		return errors.Wrap(err, "failed to run clusterctl init")
+		DeleteAll:               true,
+	}); err != nil {
+		return errors.Wrapf(err, "error during clusterctl delete")
 	}
 
 	return nil

@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 
 	"github.com/Arvinderpal/metal3ctl/config"
+	"github.com/Arvinderpal/metal3ctl/pkg/util"
 	"github.com/pkg/errors"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 )
@@ -37,7 +38,7 @@ type CreateRepositoryInput struct {
 // file to be used for working with such repository.
 func CreateRepository(ctx context.Context, input CreateRepositoryInput) (*ClusterctlConfig, error) {
 	providers := []ClusterctlConfigProvider{}
-	repositoryPath := filepath.Join(input.artifactsPath, "repository")
+	repositoryPath := util.GetRepositoryPath(input.artifactsPath)
 	for _, provider := range input.config.CAPIProviders {
 		providerUrl := ""
 		for _, version := range provider.Versions {
@@ -83,7 +84,7 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) (*Cluste
 	}
 
 	clusterctlConfigFile := &ClusterctlConfig{
-		Path: filepath.Join(repositoryPath, "clusterctl-config.yaml"),
+		Path: filepath.Join(repositoryPath, util.CLUSTERCTL_CONFIG_FILENAME),
 		Values: map[string]interface{}{
 			"providers": providers,
 		},
@@ -95,19 +96,4 @@ func CreateRepository(ctx context.Context, input CreateRepositoryInput) (*Cluste
 		return nil, errors.Wrapf(err, "error writing the clusterctl config file")
 	}
 	return clusterctlConfigFile, nil
-}
-
-// DeleteRepositoryInput is the input for DeleteRepository.
-type DeleteRepositoryInput struct {
-	artifactsPath       string
-	skipResourceCleanup bool
-}
-
-// DeleteRepository deletes a local repository.
-func DeleteRepository(ctx context.Context, input DeleteRepositoryInput) error {
-	if input.skipResourceCleanup {
-		return nil
-	}
-	repositoryPath := filepath.Join(input.artifactsPath, "repository")
-	return os.RemoveAll(repositoryPath)
 }

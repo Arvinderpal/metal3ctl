@@ -40,10 +40,10 @@ var initCmd = &cobra.Command{
 
 	Example: Examples(`
 		# Initialize a management cluster using the metal3ctl configuration file.
-		metal3ctl init --config=my-metal3ctl.config.yaml
+		metal3ctl init
 
 		# Lists the container images required for initializing the management cluster (without actually installing the providers).
-		metal3ctl init --config=my-metal3ctl.config.yaml --list-images`),
+		metal3ctl init  --list-images`),
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInit()
