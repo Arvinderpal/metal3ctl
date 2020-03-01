@@ -17,14 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/Arvinderpal/metal3ctl/config"
+	metal3ctlinit "github.com/Arvinderpal/metal3ctl/pkg/init"
 )
 
 type initOptions struct {
@@ -61,52 +61,30 @@ func runInit() error {
 
 	metal3ctlCfgFile, err = filepath.Abs(metal3ctlCfgFile)
 	if err != nil {
-		return fmt.Errorf("error converting %s to an absolute path", metal3ctlCfgFile)
+		return errors.Errorf("error converting %s to an absolute path", metal3ctlCfgFile)
 	}
 
-	config, err := config.LoadMetal3CtlConfig(context.TODO(), config.LoadMetal3CtlConfigInput{
-		ConfigPath: metal3ctlCfgFile,
-	})
+	configData, err := ioutil.ReadFile(metal3ctlCfgFile)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "error reading the config file")
 	}
 
-	prettyJSON, err := json.MarshalIndent(config, "", "    ")
+	if io.listImages {
+		// TODO
+		// images, err := cctlClient.InitImages(options)
+		// if err != nil {
+		// 	return err
+		// }
+		// for _, i := range images {
+		// 	fmt.Println(i)
+		// }
+		// return nil
+	}
+
+	err = metal3ctlinit.InitMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "error while initializing management cluster")
 	}
-	fmt.Printf("%s\n", string(prettyJSON))
 
-	// cctlClient, err := client.New(clusterctlCfgFile)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// options := client.InitOptions{
-	// 	Kubeconfig:              io.kubeconfig,
-	// 	CoreProvider:            io.coreProvider,
-	// 	BootstrapProviders:      io.bootstrapProviders,
-	// 	ControlPlaneProviders:   io.controlPlaneProviders,
-	// 	InfrastructureProviders: io.infrastructureProviders,
-	// 	TargetNamespace:         io.targetNamespace,
-	// 	WatchingNamespace:       io.watchingNamespace,
-	// 	LogUsageInstructions:    true,
-	// }
-
-	// if io.listImages {
-	// 	images, err := cctlClient.InitImages(options)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	for _, i := range images {
-	// 		fmt.Println(i)
-	// 	}
-	// 	return nil
-	// }
-
-	// if _, err := cctlClient.Init(options); err != nil {
-	// 	return err
-	// }
 	return nil
 }

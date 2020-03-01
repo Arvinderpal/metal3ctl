@@ -19,7 +19,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -32,21 +31,17 @@ import (
 
 // LoadMetal3CtlConfig is the input for LoadMetal3CtlConfig.
 type LoadMetal3CtlConfigInput struct {
-	ConfigPath string
+	ConfigData []byte
 }
 
 // LoadMetal3CtlConfig will load the metal3ctl config.
 func LoadMetal3CtlConfig(ctx context.Context, input LoadMetal3CtlConfigInput) (*Metal3CtlConfig, error) {
-	configData, err := ioutil.ReadFile(input.ConfigPath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error reading the init config file")
-	}
-	if len(configData) == 0 {
+	if len(input.ConfigData) == 0 {
 		return nil, errors.New("config should not be empty")
 	}
 
 	config := &Metal3CtlConfig{}
-	if err := yaml.Unmarshal(configData, config); err != nil {
+	if err := yaml.Unmarshal(input.ConfigData, config); err != nil {
 		return nil, errors.Wrapf(err, "error loading the init config file")
 	}
 
@@ -61,8 +56,12 @@ func LoadMetal3CtlConfig(ctx context.Context, input LoadMetal3CtlConfigInput) (*
 type Metal3CtlConfig struct {
 	// Name is the name of the management cluster.
 	ManagementClusterName string `json:"managementClusterName,omitempty"`
+
 	// Path to kubeconfig of the mgmt cluster.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
+
+	// Path to where all the generated artifacts will be stored.
+	ArtifactPath string `json:"artifactPath,omitempty"`
 
 	// Images is a list of container images to load into the mgmt cluster.
 	Images []ContainerImage `json:"images,omitempty"`
@@ -113,12 +112,14 @@ func (c *Metal3CtlConfig) Defaults() {
 // Validate validates the configuration.
 func (c *Metal3CtlConfig) Validate() error {
 	if c.ManagementClusterName == "" {
-		return errEmptyArg("ManagementClusterName")
+		return errEmptyArg("managementClusterName")
 	}
 	if c.Kubeconfig == "" {
 		return errEmptyArg("kubeconfig")
 	}
-
+	if c.ArtifactPath == "" {
+		return errEmptyArg("artifactPath")
+	}
 	providersByType := map[clusterctlv1.ProviderType][]string{
 		clusterctlv1.CoreProviderType:           nil,
 		clusterctlv1.BootstrapProviderType:      nil,
@@ -233,4 +234,13 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func (c *Metal3CtlConfig) InfraProvider() string {
+	for _, providerConfig := range c.CAPIProviders {
+		if providerConfig.Type == string(clusterctlv1.InfrastructureProviderType) {
+			return providerConfig.Name
+		}
+	}
+	panic("it is required to have an infra provider in the config")
 }
