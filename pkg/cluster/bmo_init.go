@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package init
+package cluster
 
 import (
 	"context"
@@ -26,13 +26,9 @@ import (
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// InstallBMOComponentsInput is the input for installBMOComponents.
-type InstallBMOComponentsInput struct {
-	config *config.Metal3CtlConfig
-}
 
 // BMOConfig is the BMO config file that point to the repository created by InstallBMOComponents.
 type BMOConfig struct {
@@ -41,13 +37,9 @@ type BMOConfig struct {
 	Variables map[string]interface{}
 }
 
-func InstallBMOComponents(ctx context.Context, input InstallBMOComponentsInput) (*BMOConfig, error) {
+func InstallBMOComponents(ctx context.Context, conf *config.Metal3CtlConfig) (*BMOConfig, error) {
 
-	err := input.Validation()
-	if err != nil {
-		return nil, errors.Wrapf(err, "validation failed for baremetal-operator configuration")
-	}
-	provider := input.config.BMOProvider
+	provider := conf.BMOProvider
 	version := provider.Versions[0]
 	// generate component yamls
 	generator := config.ComponentGeneratorForComponentSource(version)
@@ -67,7 +59,7 @@ func InstallBMOComponents(ctx context.Context, input InstallBMOComponentsInput) 
 
 	// TODO: change to BMOVariables
 	variablesMap := make(map[string]interface{})
-	for key, value := range input.config.Variables {
+	for key, value := range conf.Variables {
 		variablesMap[key] = value
 	}
 
@@ -77,7 +69,7 @@ func InstallBMOComponents(ctx context.Context, input InstallBMOComponentsInput) 
 		return nil, errors.Wrap(err, "failed to parse yaml")
 	}
 
-	err = createComponents(ctx, proxy.NewProxy(input.config.Kubeconfig), objs)
+	err = createComponents(ctx, proxy.NewProxy(conf.Kubeconfig), objs)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create bmo components in mgmt cluster")
 	}
@@ -132,22 +124,45 @@ func createComponents(ctx context.Context, p *proxy.Proxy, objs []unstructured.U
 	return nil
 }
 
-func DeleteBMOComponents() error {
-	// TODO
+func DeleteBMOComponents(ctx context.Context, conf *config.Metal3CtlConfig, options *DeleteOptions) error {
+	// TODO: Instead of gettitng the objects from the config file, we should instead get them from the cluster itself (see clusterctl approach).
+	// TODO: support --include-crd and --include-namespaces
+
+	version := conf.BMOProvider.Versions[0]
+	// generate component yamls
+	generator := config.ComponentGeneratorForComponentSource(version)
+	manifest, err := generator.Manifests(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "error generating the manifest for %q / %q", conf.BMOProvider.Name, version.Name)
+	}
+	// transform the manifest to a list of objects
+	objs, err := util.ToUnstructured(manifest)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse yaml")
+	}
+	err = deleteComponents(ctx, proxy.NewProxy(conf.Kubeconfig), objs)
+	if err != nil {
+		return errors.Wrap(err, "failed to create bmo components in mgmt cluster")
+	}
 	return nil
 }
 
-func (input InstallBMOComponentsInput) Validation() error {
-	provider := input.config.BMOProvider
-	if len(provider.Versions) != 1 {
-		// TODO: consider adding support for multiple bmo versions
-		return errors.New("please specify one and only one baremetal-operator version")
+func deleteComponents(ctx context.Context, p *proxy.Proxy, objs []unstructured.Unstructured) error {
+
+	c, err := p.NewClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create controller-runtime client")
 	}
-	if provider.Name == "" {
-		return errors.New("baremetal-operator name cannot be empty in metal3ctl configuration file")
+	errList := []error{}
+	for _, obj := range objs {
+		// log.V(5).Info("Deleting", logf.UnstructuredToValues(obj)...)
+		if err := c.Delete(ctx, &obj); err != nil {
+			if apierrors.IsNotFound(err) {
+				// Tolerate IsNotFound error that might happen because we are not enforcing a deletion order
+				continue
+			}
+			errList = append(errList, errors.Wrapf(err, "Error deleting object %s, %s/%s", obj.GroupVersionKind(), obj.GetNamespace(), obj.GetName()))
+		}
 	}
-	if provider.Type != "BareMetalOperator" {
-		return errors.Errorf("baremetal-operator type must be BareMetalOperator, found %v instead", provider.Type)
-	}
-	return nil
+	return kerrors.NewAggregate(errList)
 }

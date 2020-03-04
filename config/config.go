@@ -214,7 +214,16 @@ func (c *Metal3CtlConfig) Validate() error {
 		}
 	}
 
-	// TODO: validate BMOProvider
+	if len(c.BMOProvider.Versions) != 1 {
+		// TODO: consider adding support for multiple bmo versions
+		return errors.New("please specify one and only one baremetal-operator version")
+	}
+	if c.BMOProvider.Name == "" {
+		return errors.New("baremetal-operator name cannot be empty in metal3ctl configuration file")
+	}
+	if c.BMOProvider.Type != "BareMetalOperator" {
+		return errors.Errorf("baremetal-operator type must be BareMetalOperator, found %v instead", c.BMOProvider.Type)
+	}
 
 	return nil
 }

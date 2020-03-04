@@ -24,13 +24,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Arvinderpal/metal3ctl/config"
-	metal3ctldelete "github.com/Arvinderpal/metal3ctl/pkg/delete"
+	metal3ctldelete "github.com/Arvinderpal/metal3ctl/pkg/cluster"
 )
 
 var dd = &metal3ctldelete.DeleteOptions{}
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete [providers]",
+	Use:   "delete ",
 	Short: "Deletes one or more providers from the management cluster",
 	Long: LongDesc(`
 		Deletes one or more providers from the management cluster.`),
@@ -44,7 +44,13 @@ var deleteCmd = &cobra.Command{
 		# Reset the management cluster to its original state
 		# Important! As a consequence of this operation all the corresponding resources on target clouds
 		# are "orphaned" and thus there may be ongoing costs incurred as a result of this.
-		metal3ctl delete --include-crd  --include-namespace`),
+		metal3ctl delete --include-crd  --include-namespace
+		
+		# Skips the baremetal-operator deletion.
+		metal3ctl init  --skip-bmo
+
+		# Skips the cluster-api component deletion.
+		metal3ctl init  --skip-capi`),
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runDelete()
@@ -54,7 +60,8 @@ var deleteCmd = &cobra.Command{
 func init() {
 	deleteCmd.Flags().BoolVarP(&dd.IncludeNamespace, "include-namespace", "", false, "Forces the deletion of the namespace where the providers are hosted (and of all the contained objects)")
 	deleteCmd.Flags().BoolVarP(&dd.IncludeCRDs, "include-crd", "", false, "Forces the deletion of the provider's CRDs (and of all the related objects)")
-
+	initCmd.Flags().BoolVarP(&dd.SkipBMO, "skip-bmo", "", false, "Skips the baremetal-operator deletion on the management cluster)")
+	initCmd.Flags().BoolVarP(&dd.SkipCAPI, "skip-capi", "", false, "Skips the cluster-api deletion on the management cluster)")
 	RootCmd.AddCommand(deleteCmd)
 }
 

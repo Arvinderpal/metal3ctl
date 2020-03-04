@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Arvinderpal/metal3ctl/config"
-	metal3ctlinit "github.com/Arvinderpal/metal3ctl/pkg/init"
+	metal3ctlinit "github.com/Arvinderpal/metal3ctl/pkg/cluster"
 )
 
 var io = &metal3ctlinit.InitOptions{}
