@@ -19,6 +19,7 @@ package util
 import "path/filepath"
 
 const CLUSTERCTL_CONFIG_FILENAME = "clusterctl-config.yaml"
+const BMO_CONFIG_FILENAME = "bmo-config.yaml"
 
 func GetRepositoryPath(artifactsPath string) string {
 	return filepath.Join(artifactsPath, "repository")

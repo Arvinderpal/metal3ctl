@@ -23,20 +23,20 @@ import (
 	"path/filepath"
 
 	"github.com/Arvinderpal/metal3ctl/config"
-	"github.com/Arvinderpal/metal3ctl/pkg/util"
+	"github.com/Arvinderpal/metal3ctl/pkg/internal/util"
 	"github.com/pkg/errors"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 )
 
-// CreateRepositoryInput is the input for CreateRepository.
-type CreateRepositoryInput struct {
+// CreateCAPIRepositoryInput is the input for CreateCAPIRepository.
+type CreateCAPIRepositoryInput struct {
 	artifactsPath string
 	config        *config.Metal3CtlConfig
 }
 
-// CreateRepository creates a local repository based on the metal3ctl config and returns a metal3ctl config
+// CreateCAPIRepository creates a local repository based on the metal3ctl config and returns a metal3ctl config
 // file to be used for working with such repository.
-func CreateRepository(ctx context.Context, input CreateRepositoryInput) (*ClusterctlConfig, error) {
+func CreateCAPIRepository(ctx context.Context, input CreateCAPIRepositoryInput) (*ClusterctlConfig, error) {
 	providers := []ClusterctlConfigProvider{}
 	repositoryPath := util.GetRepositoryPath(input.artifactsPath)
 	for _, provider := range input.config.CAPIProviders {

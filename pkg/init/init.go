@@ -27,45 +27,60 @@ import (
 
 type InitOptions struct {
 	ListImages bool
+	SkipBMO    bool
+	SkipCAPI   bool
 }
 
-func InitMgmtCluster(input config.LoadMetal3CtlConfigInput) error {
+func InitMgmtCluster(input config.LoadMetal3CtlConfigInput, options *InitOptions) error {
+	var err error
 	ctx := context.TODO()
 	config, err := config.LoadMetal3CtlConfig(ctx, input)
 	if err != nil {
 		return errors.Wrapf(err, " error loading metal3ctl config file")
 	}
-	// prettyJSON, err := json.MarshalIndent(config, "", "    ")
-	// if err != nil {
-	// 	return err
+
+	// TODO: Prefetch Images into mgmt cluster.
+	// TODO: This is minikube specific. Make it more generic.
+	// sudo minikube ssh sudo docker pull quay.io/metal3-io/ironic
+	// for _, containerImage := range config.Images {
+	// 	fmt.Printf("Fetching image %q", containerImage.Name)
 	// }
-	// fmt.Printf("%s\n", string(prettyJSON))
-
-	// Creates a local provider repository based on the configuration and a clusterctl config file that reads from this repository.
-	clusterctlConfig, err := CreateRepository(ctx, CreateRepositoryInput{
-		config:        config,
-		artifactsPath: config.ArtifactsPath,
-	})
-	if err != nil {
-		return errors.Wrapf(err, "error creating local repository")
+	if !options.SkipBMO {
+		_, err = InstallBMOComponents(ctx, InstallBMOComponentsInput{
+			config: config,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "error installing baremetal-operator components")
+		}
 	}
 
-	cctlClient, err := clusterctlclient.New(clusterctlConfig.Path)
-	if err != nil {
-		return errors.Wrapf(err, "error creating clusterctl client")
-	}
+	if !options.SkipCAPI {
+		// Creates a local provider repository based on the configuration and a clusterctl config file that reads from this repository.
+		clusterctlConfig, err := CreateCAPIRepository(ctx, CreateCAPIRepositoryInput{
+			config:        config,
+			artifactsPath: config.ArtifactsPath,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "error creating local cluster-api repository")
+		}
 
-	initOpt := clusterctlclient.InitOptions{
-		Kubeconfig:              config.Kubeconfig,
-		CoreProvider:            clusterctlconfig.ClusterAPIProviderName,
-		BootstrapProviders:      []string{clusterctlconfig.KubeadmBootstrapProviderName},
-		ControlPlaneProviders:   []string{clusterctlconfig.KubeadmControlPlaneProviderName},
-		InfrastructureProviders: []string{config.InfraProvider()},
-	}
+		cctlClient, err := clusterctlclient.New(clusterctlConfig.Path)
+		if err != nil {
+			return errors.Wrapf(err, "error creating clusterctl client")
+		}
 
-	_, err = cctlClient.Init(initOpt)
-	if err != nil {
-		return errors.Wrap(err, "failed to run clusterctl init")
+		initOpt := clusterctlclient.InitOptions{
+			Kubeconfig:              config.Kubeconfig,
+			CoreProvider:            clusterctlconfig.ClusterAPIProviderName,
+			BootstrapProviders:      []string{clusterctlconfig.KubeadmBootstrapProviderName},
+			ControlPlaneProviders:   []string{clusterctlconfig.KubeadmControlPlaneProviderName},
+			InfrastructureProviders: []string{config.InfraProvider()},
+		}
+
+		_, err = cctlClient.Init(initOpt)
+		if err != nil {
+			return errors.Wrap(err, "failed to run clusterctl init")
+		}
 	}
 
 	return nil

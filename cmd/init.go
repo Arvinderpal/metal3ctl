@@ -27,11 +27,7 @@ import (
 	metal3ctlinit "github.com/Arvinderpal/metal3ctl/pkg/init"
 )
 
-type initOptions struct {
-	listImages bool
-}
-
-var io = &initOptions{}
+var io = &metal3ctlinit.InitOptions{}
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -43,7 +39,13 @@ var initCmd = &cobra.Command{
 		metal3ctl init
 
 		# Lists the container images required for initializing the management cluster (without actually installing the providers).
-		metal3ctl init  --list-images`),
+		metal3ctl init  --list-images
+
+		# Skips the baremetal-operator initialization.
+		metal3ctl init  --skip-bmo
+
+		# Skips the cluster-api component initialization.
+		metal3ctl init  --skip-capi`),
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInit()
@@ -51,8 +53,9 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
-	initCmd.Flags().BoolVarP(&io.listImages, "list-images", "", false, "Lists the container images required for initializing the management cluster (without actually installing the providers)")
-
+	initCmd.Flags().BoolVarP(&io.ListImages, "list-images", "", false, "Lists the container images required for initializing the management cluster (without actually installing the providers)")
+	initCmd.Flags().BoolVarP(&io.SkipBMO, "skip-bmo", "", false, "Skips the baremetal-operator initialization on the management cluster)")
+	initCmd.Flags().BoolVarP(&io.SkipCAPI, "skip-capi", "", false, "Skips the cluster-api initialization on the management cluster)")
 	RootCmd.AddCommand(initCmd)
 }
 
@@ -69,7 +72,7 @@ func runInit() error {
 		return errors.Wrapf(err, "error reading the config file")
 	}
 
-	if io.listImages {
+	if io.ListImages {
 		// TODO
 		// images, err := cctlClient.InitImages(options)
 		// if err != nil {
@@ -81,7 +84,7 @@ func runInit() error {
 		// return nil
 	}
 
-	err = metal3ctlinit.InitMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData})
+	err = metal3ctlinit.InitMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData}, io)
 	if err != nil {
 		return errors.Wrapf(err, "error while initializing management cluster")
 	}
