@@ -24,10 +24,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Arvinderpal/metal3ctl/config"
-	metal3ctldelete "github.com/Arvinderpal/metal3ctl/pkg/cluster"
+	metal3ctl "github.com/Arvinderpal/metal3ctl/pkg/cluster"
 )
 
-var dd = &metal3ctldelete.DeleteOptions{}
+var dd = &metal3ctl.DeleteOptions{}
 
 var deleteCmd = &cobra.Command{
 	Use:   "delete ",
@@ -47,10 +47,10 @@ var deleteCmd = &cobra.Command{
 		metal3ctl delete --include-crd  --include-namespace
 		
 		# Skips the baremetal-operator deletion.
-		metal3ctl init  --skip-bmo
+		metal3ctl delete  --skip-bmo
 
 		# Skips the cluster-api component deletion.
-		metal3ctl init  --skip-capi`),
+		metal3ctl delete  --skip-capi`),
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runDelete()
@@ -60,8 +60,8 @@ var deleteCmd = &cobra.Command{
 func init() {
 	deleteCmd.Flags().BoolVarP(&dd.IncludeNamespace, "include-namespace", "", false, "Forces the deletion of the namespace where the providers are hosted (and of all the contained objects)")
 	deleteCmd.Flags().BoolVarP(&dd.IncludeCRDs, "include-crd", "", false, "Forces the deletion of the provider's CRDs (and of all the related objects)")
-	initCmd.Flags().BoolVarP(&dd.SkipBMO, "skip-bmo", "", false, "Skips the baremetal-operator deletion on the management cluster)")
-	initCmd.Flags().BoolVarP(&dd.SkipCAPI, "skip-capi", "", false, "Skips the cluster-api deletion on the management cluster)")
+	deleteCmd.Flags().BoolVarP(&dd.SkipBMO, "skip-bmo", "", false, "Skips the baremetal-operator deletion on the management cluster)")
+	deleteCmd.Flags().BoolVarP(&dd.SkipCAPI, "skip-capi", "", false, "Skips the cluster-api deletion on the management cluster)")
 	RootCmd.AddCommand(deleteCmd)
 }
 
@@ -78,9 +78,9 @@ func runDelete() error {
 		return errors.Wrapf(err, "error reading the config file")
 	}
 
-	err = metal3ctldelete.DeleteFromMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData}, dd)
+	err = metal3ctl.DeleteFromMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData}, dd)
 	if err != nil {
-		return errors.Wrapf(err, "error while initializing management cluster")
+		return errors.Wrapf(err, "error while deleting management cluster")
 	}
 
 	return nil

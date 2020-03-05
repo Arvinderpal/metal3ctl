@@ -24,10 +24,10 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Arvinderpal/metal3ctl/config"
-	metal3ctlinit "github.com/Arvinderpal/metal3ctl/pkg/cluster"
+	metal3ctl "github.com/Arvinderpal/metal3ctl/pkg/cluster"
 )
 
-var io = &metal3ctlinit.InitOptions{}
+var io = &metal3ctl.InitOptions{}
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -84,7 +84,7 @@ func runInit() error {
 		// return nil
 	}
 
-	err = metal3ctlinit.InitMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData}, io)
+	err = metal3ctl.InitMgmtCluster(config.LoadMetal3CtlConfigInput{ConfigData: configData}, io)
 	if err != nil {
 		return errors.Wrapf(err, "error while initializing management cluster")
 	}
