@@ -3,11 +3,12 @@
 
 Ensure the required packages are installed on the ubuntu host:
 
-	./hack/install_packages_ubuntu.sh
+	cd hack/
+	./install_packages_ubuntu.sh
 	
 Launch the mgmt cluster:
 
-	./hack/minikube.sh
+	PRE_PULL_IMAGES=true ./minikube.sh
 
 # Init BMO on the mgmt cluster
 Copy over the generated ConfigMap values to your local baremetal-operator repository. The values will be incorporated into the final ConfigMap used during the deployment: 

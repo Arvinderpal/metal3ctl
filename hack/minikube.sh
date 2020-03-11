@@ -15,6 +15,7 @@
 # limitations under the License.
 set -xe
 # shellcheck disable=SC1091
+source logging.sh
 source common.sh
 source network.sh
 
@@ -23,21 +24,50 @@ function configure_minikube() {
     minikube config set memory 4096
 }
 
+#
+# Create a mgmt cluster (minikube VM)
+#
 function init_minikube() {
 
     #If the vm exists, it has already been initialized
     if [[ "$(sudo virsh list --all)" != *"minikube"* ]]; then
       sudo su -l -c "minikube start" "$USER"
-      # Pre-pull the image to reduce pod initialization time
-      for IMAGE_VAR in IRONIC_IMAGE IPA_DOWNLOADER_IMAGE IRONIC_INSPECTOR_IMAGE BAREMETAL_OPERATOR_IMAGE; do
-        IMAGE=${!IMAGE_VAR}
-        sudo su -l -c "minikube ssh sudo docker pull $IMAGE" "${USER}"
-      done
+      if [ "${PRE_PULL_IMAGES}" == "true" ]; then
+        # Pre-pull the image to reduce pod initialization time
+        for IMAGE_VAR in IRONIC_IMAGE IPA_DOWNLOADER_IMAGE IRONIC_INSPECTOR_IMAGE BAREMETAL_OPERATOR_IMAGE; do
+          IMAGE=${!IMAGE_VAR}
+          sudo su -l -c "minikube ssh sudo docker pull $IMAGE" "${USER}"
+        done
+      fi
       sudo su -l -c "minikube ssh sudo docker image ls" "${USER}"
-      # sudo su -l -c "minikube stop" "$USER"
+      sudo su -l -c "minikube stop" "$USER"
     fi
 
+    # Add network interfaces to mgmt cluster (minikube VM)
+    MINIKUBE_IFACES="$(sudo virsh domiflist minikube)"
+    # The interface doesn't appear in the minikube VM with --live,
+    # so just attach it before next boot. As long as the
+    if ! echo "$MINIKUBE_IFACES" | grep -w provisioning  > /dev/null ; then
+      sudo virsh attach-interface --domain minikube \
+          --model virtio --source provisioning \
+          --type network --config
+    fi
+
+    if ! echo "$MINIKUBE_IFACES" | grep -w baremetal  > /dev/null ; then
+      sudo virsh attach-interface --domain minikube \
+          --model virtio --source baremetal \
+          --type network --config
+    fi
 }
+
+function start_minikube_mgmt_cluster(){
+  sudo su -l -c 'minikube start' "${USER}"
+  sudo su -l -c "minikube ssh sudo brctl addbr $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
+  sudo su -l -c "minikube ssh sudo ip link set $CLUSTER_PROVISIONING_INTERFACE up" "${USER}"
+  sudo su -l -c "minikube ssh sudo brctl addif $CLUSTER_PROVISIONING_INTERFACE eth2" "${USER}"
+  sudo su -l -c "minikube ssh sudo ip addr add $INITIAL_IRONICBRIDGE_IP/$PROVISIONING_CIDR dev $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
+}
+
 
 function ironic_bmo_configmap_file() {
   filepath=$1
@@ -59,3 +89,4 @@ EOF
 ironic_bmo_configmap_file "${ARTIFACTS}"
 configure_minikube
 init_minikube
+start_minikube_mgmt_cluster
