@@ -22,3 +22,6 @@ start_mgmt_cluster:
 
 copy_ironic_bmo_configmap_file:
 	cp ./_artifacts/ironic_bmo_configmap.env $(BMO_REPO)/deploy/ironic-keepalived-config/ironic_bmo_configmap.env
+
+delete_mgmt_cluster:
+	sudo minikube delete

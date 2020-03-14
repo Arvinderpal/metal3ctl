@@ -25,7 +25,12 @@ Using the provided example metal3ctl config file, initialize the mgmt cluster wi
 
 # Delete BMO and CAPI components, CRDs, namspaces, etc.
 
-	./metal3ctl --config examples/metal3ctl.dev.conf delete
+	./metal3ctl --config examples/metal3ctl.dev.conf delete --skip-bmo
+	./metal3ctl --config examples/metal3ctl.dev.conf delete --skip-capi
+
+# Delete Minikube cluster
+
+	sudo minikube delete
 
 # Useful commands
 
@@ -40,4 +45,5 @@ Cluster-API:
 
 Baremetal-Operator:
 	
-	kubectl get baremetalhost -n metal3 -oyaml node-0
+	kubectl get baremetalhost -n metal3 
+	kubectl describe baremetalhost -n metal3 node-0

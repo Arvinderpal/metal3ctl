@@ -71,7 +71,7 @@ type Metal3CtlConfig struct {
 	// - cluster-api
 	// - bootstrap kubeadm
 	// - control-plane kubeadm
-	// - cluster-api-baremetal
+	// - cluster-api-provider--metal3
 	CAPIProviders []ProviderConfig `json:"capiProviders,omitempty"`
 
 	// baremetal-operator configuration
