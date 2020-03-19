@@ -66,6 +66,9 @@ function start_minikube_mgmt_cluster(){
   sudo su -l -c "minikube ssh sudo ip link set $CLUSTER_PROVISIONING_INTERFACE up" "${USER}"
   sudo su -l -c "minikube ssh sudo brctl addif $CLUSTER_PROVISIONING_INTERFACE eth2" "${USER}"
   sudo su -l -c "minikube ssh sudo ip addr add $INITIAL_IRONICBRIDGE_IP/$PROVISIONING_CIDR dev $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
+  # NOTE(awander): in metal3-dev-env, the following is only executed when IPV6 is enabled. Not sure how that env works w/o this...
+  # sudo su -l -c 'minikube ssh "sudo ip addr add '"172.22.0.2/24"' dev eth2"' awander
+  sudo su -l -c 'minikube ssh "sudo ip addr add '"$CLUSTER_PROVISIONING_IP/$PROVISIONING_CIDR"' dev eth2"' "${USER}"
 }
 
 
@@ -86,6 +89,17 @@ IRONIC_FAST_TRACK=false
 EOF
 }
 
+#
+# Write out a clouds.yaml for this environment
+#
+function create_clouds_yaml() {
+  sed -e "s/__CLUSTER_URL_HOST__/$CLUSTER_URL_HOST/g" "${REPO_ROOT}"/hack/clouds.yaml.template > "${REPO_ROOT}"/hack/clouds.yaml
+  # To bind this into the ironic-client container we need a directory
+  mkdir -p "${REPO_ROOT}"/hack/_clouds_yaml
+  cp clouds.yaml "${REPO_ROOT}"/hack/_clouds_yaml/
+}
+
+create_clouds_yaml
 ironic_bmo_configmap_file "${ARTIFACTS}"
 configure_minikube
 init_minikube

@@ -26,3 +26,17 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 export ARTIFACTS="${ARTIFACTS:-${REPO_ROOT}/_artifacts}"
 mkdir -p "$ARTIFACTS/"
 
+# Cluster.
+export CLUSTER_NAME=${CLUSTER_NAME:-"test1"}
+export CLUSTER_APIENDPOINT_IP=${CLUSTER_APIENDPOINT_IP:-"192.168.111.249"}
+export KUBERNETES_VERSION=${KUBERNETES_VERSION:-"v1.17.0"}
+
+export SSH_KEY=${SSH_KEY:-"${HOME}/.ssh/id_rsa"}
+export SSH_PUB_KEY=${SSH_PUB_KEY:-"${SSH_KEY}.pub"}
+# Generate user ssh key
+if [ ! -f "${SSH_KEY}" ]; then
+  mkdir -p "$(dirname "$SSH_KEY")"
+  ssh-keygen -f "${SSH_KEY}" -P ""
+fi
+export SSH_PRIVATE_KEY=`cat ${SSH_KEY}`
+export SSH_PUB_KEY_CONTENT=`cat ${SSH_PUB_KEY}`
