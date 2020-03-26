@@ -12,17 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BMO_REPO ?= $(HOME)/go/src/github.com/metal3-io/baremetal-operator
-
 install_requirements:
 	./hack/install_packages_ubuntu.sh
 
 start_mgmt_cluster:
 	./hack/minikube.sh
-
-copy_ironic_bmo_configmap_file:
-	# TODO: move this into minikube.sh
-	cp ./_artifacts/ironic_bmo_configmap.env $(BMO_REPO)/deploy/ironic-keepalived-config/ironic_bmo_configmap.env
 
 delete_mgmt_cluster:
 	sudo minikube delete

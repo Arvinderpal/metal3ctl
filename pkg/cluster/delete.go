@@ -23,8 +23,8 @@ import (
 	"github.com/Arvinderpal/metal3ctl/config"
 	"github.com/Arvinderpal/metal3ctl/pkg/internal/util"
 	"github.com/pkg/errors"
-	clusterctlclient "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/client"
-	clusterctlconfig "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/client/config"
+	clusterctlclient "sigs.k8s.io/cluster-api/cmd/clusterctl/client"
+	clusterctlconfig "sigs.k8s.io/cluster-api/cmd/clusterctl/client/config"
 )
 
 type DeleteOptions struct {

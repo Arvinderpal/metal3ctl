@@ -99,8 +99,13 @@ function create_clouds_yaml() {
   cp clouds.yaml "${REPO_ROOT}"/hack/_clouds_yaml/
 }
 
+function copy_ironic_bmo_configmap_file() {
+  cp ./_artifacts/ironic_bmo_configmap.env "${BMO_REPO}/deploy/ironic-keepalived-config/ironic_bmo_configmap.env"
+}
+
 create_clouds_yaml
 ironic_bmo_configmap_file "${ARTIFACTS}"
 configure_minikube
 init_minikube
 start_minikube_mgmt_cluster
+copy_ironic_bmo_configmap_file

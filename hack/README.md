@@ -1,16 +1,20 @@
+# Install Packages and Create "baremetal" VMs
+
+The current approach relies on the `02_configure_host.sh` script from the metal3-dev-env repo to configure a couple of VMs that will function as the baremetal hosts:
+
+	export IMAGE_OS=Ubuntu
+	export DEFAULT_HOSTS_MEMORY=4096
+	export BMOPATH=/home/awander/go/src/github.com/metal3-io/baremetal-operator
+	cd $BMOPATH
+	./01_prepare_host.sh
+	./02_configure_host.sh
 
 # minikube mgmt cluster
-
-Ensure the required packages are installed on the ubuntu host:
-
-	cd hack/
-	./install_packages_ubuntu.sh
-	
-Launch the mgmt cluster:
 
 	PRE_PULL_IMAGES=true ./minikube.sh
 
 # Init BMO on the mgmt cluster
+
 Copy over the generated ConfigMap values to your local baremetal-operator repository. The values will be incorporated into the final ConfigMap used during the deployment: 
 
 	make copy_ironic_bmo_configmap_file
@@ -25,14 +29,6 @@ Alterntively, skip either bmo or cluster-api initalization:
 	./metal3ctl --config examples/metal3ctl.dev.conf init --skip-bmo	
 
 # Create BMH 
-
-The current approach relies on the `02_configure_host.sh` script from the metal3-dev-env repo to configure a couple of VMs that will function as the baremetal hosts:
-
-	export IMAGE_OS=Ubuntu
-	export DEFAULT_HOSTS_MEMORY=4096
-	export BMOPATH=/home/awander/go/src/github.com/metal3-io/baremetal-operator
-	cd $BMOPATH
-	./02_configure_host.sh
 
 Create and apply BareMetalHost definitions:
 	
@@ -51,9 +47,15 @@ Create and apply BareMetalHost definitions:
 	./metal3ctl --config examples/metal3ctl.dev.conf delete --skip-bmo
 	./metal3ctl --config examples/metal3ctl.dev.conf delete --skip-capi
 
-# Delete Minikube cluster
+# Clean up
 
-	sudo minikube delete
+From the `metal3-dev-env`:
+	
+	./host_cleanup.sh
+
+Delete Minikube cluster
+	
+	minikube delete
 
 # Useful commands
 

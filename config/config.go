@@ -25,7 +25,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterctlv1 "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
-	clusterctlconfig "sigs.k8s.io/cluster-api/cmd/clusterctl/pkg/client/config"
+	clusterctlconfig "sigs.k8s.io/cluster-api/cmd/clusterctl/client/config"
 	"sigs.k8s.io/yaml"
 )
 
