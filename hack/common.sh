@@ -42,3 +42,6 @@ export SSH_PRIVATE_KEY=`cat ${SSH_KEY}`
 export SSH_PUB_KEY_CONTENT=`cat ${SSH_PUB_KEY}`
 
 export BMO_REPO=${BMO_REPO:-"${HOME}/go/src/github.com/metal3-io/baremetal-operator"}
+
+# Minikube profile for the second mgmt cluster (for move/pivot testing)
+export NEW_MGMT_CLUSTER_NAME="minikube2"

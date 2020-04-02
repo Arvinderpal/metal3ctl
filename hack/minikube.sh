@@ -62,13 +62,18 @@ function init_minikube() {
 
 function start_minikube_mgmt_cluster(){
   sudo su -l -c 'minikube start' "${USER}"
-  sudo su -l -c "minikube ssh sudo brctl addbr $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
-  sudo su -l -c "minikube ssh sudo ip link set $CLUSTER_PROVISIONING_INTERFACE up" "${USER}"
-  sudo su -l -c "minikube ssh sudo brctl addif $CLUSTER_PROVISIONING_INTERFACE eth2" "${USER}"
-  sudo su -l -c "minikube ssh sudo ip addr add $INITIAL_IRONICBRIDGE_IP/$PROVISIONING_CIDR dev $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
-  # NOTE(awander): in metal3-dev-env, the following is only executed when IPV6 is enabled. Not sure how that env works w/o this...
-  # sudo su -l -c 'minikube ssh "sudo ip addr add '"172.22.0.2/24"' dev eth2"' awander
-  sudo su -l -c 'minikube ssh "sudo ip addr add '"$CLUSTER_PROVISIONING_IP/$PROVISIONING_CIDR"' dev eth2"' "${USER}"
+  # 
+  if ! minikube ssh sudo brctl show | grep -w "${CLUSTER_PROVISIONING_INTERFACE}"  > /dev/null ; then
+    sudo su -l -c "minikube ssh sudo brctl addbr $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
+    sudo su -l -c "minikube ssh sudo ip link set $CLUSTER_PROVISIONING_INTERFACE up" "${USER}"
+    sudo su -l -c "minikube ssh sudo ip addr add $INITIAL_IRONICBRIDGE_IP/$PROVISIONING_CIDR dev $CLUSTER_PROVISIONING_INTERFACE" "${USER}"
+  fi
+  if ! minikube ssh sudo brctl show "${CLUSTER_PROVISIONING_INTERFACE}" | grep -w "eth2"  > /dev/null ; then
+    sudo su -l -c "minikube ssh sudo brctl addif $CLUSTER_PROVISIONING_INTERFACE eth2" "${USER}"
+    # NOTE(awander): in metal3-dev-env, the following is only executed when IPV6 is enabled. Not sure how that env works w/o this...
+    # sudo su -l -c 'minikube ssh "sudo ip addr add '"172.22.0.2/24"' dev eth2"' awander
+    sudo su -l -c 'minikube ssh "sudo ip addr add '"$CLUSTER_PROVISIONING_IP/$PROVISIONING_CIDR"' dev eth2"' "${USER}"
+  fi
 }
 
 
@@ -100,7 +105,7 @@ function create_clouds_yaml() {
 }
 
 function copy_ironic_bmo_configmap_file() {
-  cp ./_artifacts/ironic_bmo_configmap.env "${BMO_REPO}/deploy/ironic-keepalived-config/ironic_bmo_configmap.env"
+  cp "${REPO_ROOT}"/_artifacts/ironic_bmo_configmap.env "${BMO_REPO}/deploy/ironic-keepalived-config/ironic_bmo_configmap.env"
 }
 
 create_clouds_yaml
