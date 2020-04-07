@@ -17,6 +17,9 @@ limitations under the License.
 package scheme
 
 import (
+	bmoapis "github.com/metal3-io/baremetal-operator/pkg/apis"
+	infrav1alpha2 "github.com/metal3-io/cluster-api-provider-metal3/api/v1alpha2"
+	infrav1alpha3 "github.com/metal3-io/cluster-api-provider-metal3/api/v1alpha3"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -34,5 +37,7 @@ func init() {
 	_ = clusterctlv1.AddToScheme(Scheme)
 	_ = clusterv1.AddToScheme(Scheme)
 	_ = apiextensionsv1.AddToScheme(Scheme)
-	// TODO: add capbm and bmo
+	_ = bmoapis.AddToScheme(Scheme)
+	_ = infrav1alpha2.AddToScheme(Scheme)
+	_ = infrav1alpha3.AddToScheme(Scheme)
 }
